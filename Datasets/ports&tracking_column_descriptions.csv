@@ -1,0 +1,11 @@
+﻿file,column,description
+ports.csv,port,unique port identifier
+ports.csv,lat,lattitude
+ports.csv,long,longitude
+tracking.csv,vessel,unique vessel identifier
+tracking.csv,datetime,observation time in UTC
+tracking.csv,lat,lattitude
+tracking.csv,long,longitude
+tracking.csv,heading,compass direction in degrees
+tracking.csv,speed,vessel speed in knots
+tracking.csv,draft,distance in meters between the ship's keel and the waterline of the vessel
