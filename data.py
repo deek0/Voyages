@@ -5,26 +5,35 @@ Ports_Data = pd.read_csv("ports.csv")
 Tracking_Data = pd.read_csv("tracking.csv")
 Grouped_Tracking_Data = Tracking_Data.groupby("vessel")
 # print(Tracking_Data)
-
+def find_closest_port(lat, long):
+    port_distance = pd.DataFrame(columns=['port', 'distance'])
+    for index, port in Ports_Data.iterrows():
+        distance = np.sqrt(((lat - port['lat'])*69)**2 + ((np.cos(port['lat'])*((long - port['long'])*69))**2))
+        row = {'port': port['port'], 'distance': distance}
+        port_distance = port_distance.append(row, ignore_index=True)
+        print(row)
+        print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+    print('MINIMUM!!!')
+    print(port_distance.iloc[port_distance['distance'].argmin()])
+    print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+    return
 
 def id_port(lat, long):
-    # takes at lat and long input and returns the port
+    # takes at lat and long input and returns the nearest port
     # calculates to distance in miles from nearest port by converting lat and long deltas
     # to distance
-    # returns first port within 15 miles. or none if they are further
 
-    max_distance_from_port = 15
     port_distance = pd.DataFrame(columns=['port', 'distance'])
     for index, port in Ports_Data.iterrows():
 
-        distance = np.sqrt(((lat - port['lat'])*69)**2 + ((long - port['long'])*54.6)**2)
+        distance = np.sqrt(((lat - port['lat'])*69)**2 + ((np.cos(port['lat'])*((long - port['long'])*69))**2))
         row = {'port': port['port'], 'distance': distance}
         port_distance = port_distance.append(row, ignore_index=True)
         # print(row)
-        if distance < max_distance_from_port:
-            # print(row)
-            return port['port']
+    smallest_distance = port_distance.iloc[port_distance['distance'].argmin()]
 
+    if smallest_distance['distance'] < 110:
+        return smallest_distance['port']
     # print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     # print('not at port')
     # print(port_distance.iloc[port_distance['distance'].argmin()])
@@ -40,7 +49,7 @@ def find_stop(df):
     long1  = 0
     for index, entry in df.iterrows():
         try:
-            if (entry['speed'] == 0 and df.iloc[index+1]['speed'] == 0) or (abs(entry['lat'] - lat) < 0.01 and abs(entry['long'] - long) < 0.01):
+            if (entry['speed'] == 0 and df.iloc[index+1]['speed'] == 0) or (abs(entry['lat'] - lat) < 0.001 and abs(entry['long'] - long) < 0.001):
                 lat = entry['lat']
                 long = entry['long']
                 if not (abs(entry['lat'] - lat1) < 0.01 and abs(entry['long'] - long1) < 0.01):
@@ -54,6 +63,7 @@ def find_stop(df):
                         # print(entry)
                         # print('stop')
                         # print(index)
+                        # print([entry['vessel'], port, entry['datetime'], index])
                         return [entry['vessel'], port, entry['datetime'], index]
         except IndexError:
             lat = entry['lat']
@@ -69,22 +79,21 @@ def find_stop(df):
 
 
 def find_start(df):
-    lat = 0
-    long = 0
+
     # iterates through the Tracking_Data to find the next voyage start
     # at end of the data, returns none because there will be no voyage anyway
     for index, entry in df.iterrows():
         try:
-            if not (abs(df.iloc[index+1]['lat'] - lat) < 0.001 and abs(df.iloc[index+1]['long'] - long) < 0.001):
-                lat = df.iloc[index+1]['lat']
-                long = df.iloc[index+1]['long']
-                if not id_port(lat, long):
-                    # print("starting port")
-                    port = (id_port(entry['lat'], entry['long']))
-                    # print(entry)
-                    # print('start')
-                    # print(index)
-                    return [entry['vessel'], port, df.iloc[index+1]['datetime'], index+1]
+            lat = entry['lat']
+            long = entry['long']
+            if not (abs(df.iloc[index+1]['lat'] - lat) < 0.01 and abs(df.iloc[index+1]['long'] - long) < 0.01):
+
+                port = (id_port(entry['lat'], entry['long']))
+                # print(entry)
+                # print('start')
+                # print(index)
+                # print([entry['vessel'], port, df.iloc[index+1]['datetime'], index+1])
+                return [entry['vessel'], port, df.iloc[index+1]['datetime'], index+1]
         except IndexError:
             return [None, None, None, index+1]
     return [None, None, None, index+1]
@@ -149,6 +158,7 @@ def find_voyages_one_ship(df):
                 voyages = voyages.append(row, ignore_index=True)
         index = index + row['end_index']
         # df = df[index:].reset_index(drop=True)
+    print(voyages.to_string())
     return voyages
 
 
@@ -193,8 +203,8 @@ print(Grouped_Tracking_Data.get_group(1). sort_values("datetime").
 
 find_all_voyages(Grouped_Tracking_Data)
 
-
-
+# find_closest_port(49.714400,   -4.435800)
+# print(id_port(49.714400,   -4.435800))
 
 # print(Grouped_Tracking_Data.get_group(8).sort_values("datetime")
 # .reset_index(drop=True)[-2000:].to_string())
